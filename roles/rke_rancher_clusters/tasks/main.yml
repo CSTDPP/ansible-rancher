@@ -1,8 +1,8 @@
 ---
     
-- name: Download binary dependencies
-  delegate_to: localhost
-  import_tasks: dependencies.yml
+#- name: Download binary dependencies
+#  delegate_to: localhost
+#  import_tasks: dependencies.yml
 
 - name: RKE Config
   delegate_to: localhost

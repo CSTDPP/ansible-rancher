@@ -1,5 +1,5 @@
 - name: Cleanup Nodes
-  hosts: all
+  hosts: rancher_k8s_nodes
   tasks:
     - name: Stop Docker Container
       shell:

@@ -36,7 +36,7 @@
   changed_when: false
 
 - name: Install CRD's for CertManager
-  command: "{{ kubectl_binary }} --kubeconfig {{ rke_cluster_kube_config }} apply --validate=false -f {{ rancher_certmanager_crd_url }}"
+  command: "{{ kubectl_binary }} --kubeconfig {{ rke_cluster_kube_config }} apply -f {{ rancher_certmanager_crd_url }}"
   changed_when: false
   ignore_errors: yes
   when:
@@ -82,6 +82,77 @@
       type: kubernetes.io/tls
   when:
   - rancher_bring_your_own_certificates
+
+- name: Create DNS Provider (cloudflare for now) API Token Secret for ClusterIssuer with DNS-01 method (method 4)
+  k8s:
+    kubeconfig: "{{ rke_cluster_kube_config }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: cloudflare-api-token-secret
+        namespace: cert-manager
+      type: Opaque
+      stringData:
+        api-token: "{{ cloudflare_api_token }}"
+  when:
+  - rancher_lets_encrypt_dns_challenge_generated_certificated
+  - not rancher_bring_your_own_certificates
+  - not rancher_lets_encrypt_generated_certificated
+
+- name: Create ClusterIssuer for Rancher certificate managed by certmanager with DNS-01 method (method 4)
+  k8s:
+    kubeconfig: "{{ rke_cluster_kube_config }}"
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      metadata:
+        name: letsencrypt-prod
+        namespace: cert-manager
+      spec:
+        acme:
+          server: https://acme-v02.api.letsencrypt.org/directory
+          email: "{{ rancher_letsencrypt_email }}"
+          privateKeySecretRef:
+            name: letsencrypt-prod
+          solvers:
+          - dns01:
+              cloudflare:
+                email: "{{ cloudflare_email }}"
+                apiTokenSecretRef:
+                  name: cloudflare-api-token-secret
+                  key: api-token
+  when:
+  - rancher_lets_encrypt_dns_challenge_generated_certificated
+  - not rancher_bring_your_own_certificates
+  - not rancher_lets_encrypt_generated_certificated
+
+- name: Create Certificate for Rancher managed by certmanager with DNS-01 method (method 4)
+  k8s:
+    kubeconfig: "{{ rke_cluster_kube_config }}"
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: tls-rancher-ingress
+        namespace: cattle-system
+      spec:
+        secretName: tls-rancher-ingress
+        commonName: "{{ rancher_hostname }}"
+        dnsNames:
+          - "{{ rancher_hostname }}"
+          - "*.{{ rancher_hostname }}"
+        issuerRef:
+          name: letsencrypt-prod
+          namespace: cert-manager
+          kind: ClusterIssuer
+  when:
+  - rancher_lets_encrypt_dns_challenge_generated_certificated
+  - not rancher_bring_your_own_certificates
+  - not rancher_lets_encrypt_generated_certificated
 
 - name: Create tls cacerts secret when using "Bring your own certificate" Rancher certificate method (method 3) and using self-signed Rancher TLS cert
   k8s:
@@ -140,6 +211,19 @@
   - not rancher_lets_encrypt_generated_certificated
   - rancher_bring_your_own_certificates
   - rancher_tls_self_signed
+
+# Rancher Certificate Method 4:
+- name: Install Rancher with Let's Encrypt and DNS-01 challenge (via Cert-Manager)
+  command: "{{ helm_binary }} upgrade --install --kubeconfig {{ rke_cluster_kube_config }} --namespace cattle-system --set hostname={{ rancher_hostname }} --set ingress.tls.source=secret --version {{ helm_rancher_version }} rancher {{ helm_rancher_repo }}/rancher"
+  changed_when: false
+  when:
+  - rancher_certmanager_enabled
+  - not rancher_generated_self_signed_certificates
+  - not rancher_lets_encrypt_generated_certificated
+  - rancher_lets_encrypt_dns_challenge_generated_certificated
+  - not rancher_tls_self_signed
+  - not rancher_bring_your_own_certificates
+
 
 - name: Wait for Rancher Deployment to be ready
   command: "{{ kubectl_binary }} -n cattle-system --kubeconfig {{ rke_cluster_kube_config }} rollout status deploy/rancher"

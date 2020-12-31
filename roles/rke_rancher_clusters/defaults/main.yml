@@ -40,7 +40,7 @@ rancher_telemetry: out
 # See https://rancher.com/docs/rancher/v2.x/en/installation/k8s-install/helm-rancher/#4-choose-your-ssl-configuration
 # for more information! You have to chose one (and exactly one!) method - disable the others!
 #
-# If you chose Method 1 or 2, ensure to also enable Cert-Manager (otherwide disable it!):
+# If you chose Method 1, 2 or 4 ensure to also enable Cert-Manager (otherwide disable it!):
 rancher_certmanager_enabled: false
 #
 # Method 1: "Rancher-generated TLS certificate" (fully handled by Rancher via Cert-Manager)
@@ -63,3 +63,11 @@ rancher_tls_cacerts: ""
 # full CA chain needs to be provided via rancher_tls_cacerts. 
 # See https://rancher.com/blog/2020/transport-layer-security-p2 for more information
 rancher_tls_self_signed: false
+#
+# Method 4: "Lets Encrypt Configuration with DNS challenge" (fully handled via Cert-Manager with manually created issuer)
+# See https://github.com/rancher/rancher/issues/26850
+#
+rancher_lets_encrypt_dns_challenge_generated_certificated: false
+cloudflare_email: me@example.com
+cloudflare_api_token: XXXXXXX
+

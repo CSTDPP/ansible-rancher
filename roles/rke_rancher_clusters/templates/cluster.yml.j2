@@ -1,7 +1,7 @@
 nodes:
 {% for node in cluster %}
   - address: {{ hostvars[node]['ansible_' + rke_network_interface]['ipv4']['address'] }}
-    internal_address: {{ hostvars[node]['ansible_' + rke_network_interface]['ipv4']['address'] }}
+#    internal_address: {{ hostvars[node]['ansible_' + rke_network_interface]['ipv4']['address'] }}
     user: {{ rke_ssh_user }}
     role: [{% for role in hostvars[node]['k8s_roles'] %}{{ role }},{% endfor %}]
 
@@ -9,10 +9,10 @@ nodes:
 
 kubernetes_version: "{{ rke_kubernetes_version }}"
 
-addon_job_timeout: 30
-authentication:
-  strategy: x509
-ignore_docker_version: true
+# addon_job_timeout: 30
+# authentication:
+#   strategy: x509
+# ignore_docker_version: true
 # 
 # # Currently only nginx ingress provider is supported.
 # # To disable ingress controller, set `provider: none`
@@ -21,10 +21,10 @@ ignore_docker_version: true
 #    node_selector:
 #      app: ingress
 # 
-ingress:
-  provider: nginx
-monitoring:
-  provider: metrics-server
+#ingress:
+#  provider: nginx
+#monitoring:
+#  provider: metrics-server
 # 
 #   If you are using calico on AWS
 # 
@@ -47,10 +47,10 @@ monitoring:
 #      canal_network_provider:
 #        iface: eth1
 # 
-network:
-  options:
-    flannel_backend_type: vxlan
-  plugin: canal
+# network:
+#   options:
+#     flannel_backend_type: vxlan
+#   plugin: canal
 # 
 #    services:
 #      kube-api:
@@ -64,50 +64,55 @@ network:
 # 
 services:
   etcd:
-    backup_config:
-      interval_hours: 12
-      retention: 6
-      safe_timestamp: false
-    creation: 12h
-    extra_args:
-      election-timeout: 5000
-      heartbeat-interval: 500
-    gid: 1000
-    retention: 72h
-    snapshot: false
-    uid: 1000
-  kube_api:
-    always_pull_images: true
-    pod_security_policy: true
-    service_node_port_range: 30000-32767
-    event_rate_limit:
-      enabled: true
-    audit_log:
-      enabled: true
-    secrets_encryption_config:
-      enabled: true
-    extra_args:
-      anonymous-auth: "false"
-      enable-admission-plugins: "ServiceAccount,NamespaceLifecycle,LimitRanger,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds,AlwaysPullImages,DenyEscalatingExec,NodeRestriction,EventRateLimit,PodSecurityPolicy"
-      profiling: "false"
-      service-account-lookup: "true"
-      tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
-    extra_binds:
-      - "/opt/kubernetes:/opt/kubernetes"
-  kubelet:
-    generate_serving_certificate: true
-    extra_args:
-      feature-gates: "RotateKubeletServerCertificate=true"
-      protect-kernel-defaults: "false"
-      tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
-  kube-controller:
-    extra_args:
-      profiling: "false"
-      address: "127.0.0.1"
-      terminated-pod-gc-threshold: "1000"
-      feature-gates: "RotateKubeletServerCertificate=true"
-  scheduler:
-    extra_args:
-      profiling: "false"
-      address: "127.0.0.1"
+    snapshot: true
+    creation: 6h
+    retention: 24h
+# services:
+#   etcd:
+#     backup_config:
+#       interval_hours: 12
+#       retention: 6
+#       safe_timestamp: false
+#     creation: 12h
+#     extra_args:
+#       election-timeout: 5000
+#       heartbeat-interval: 500
+#     gid: 1000
+#     retention: 72h
+#     snapshot: false
+#     uid: 1000
+#   kube_api:
+#     always_pull_images: true
+#     pod_security_policy: true
+#     service_node_port_range: 30000-32767
+#     event_rate_limit:
+#       enabled: true
+#     audit_log:
+#       enabled: true
+#     secrets_encryption_config:
+#       enabled: true
+#     extra_args:
+#       anonymous-auth: "false"
+#       enable-admission-plugins: "ServiceAccount,NamespaceLifecycle,LimitRanger,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds,AlwaysPullImages,DenyEscalatingExec,NodeRestriction,EventRateLimit,PodSecurityPolicy"
+#       profiling: "false"
+#       service-account-lookup: "true"
+#       tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
+#     extra_binds:
+#       - "/opt/kubernetes:/opt/kubernetes"
+#   kubelet:
+#     generate_serving_certificate: true
+#     extra_args:
+#       feature-gates: "RotateKubeletServerCertificate=true"
+#       protect-kernel-defaults: "false"
+#       tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
+#   kube-controller:
+#     extra_args:
+#       profiling: "false"
+#       address: "127.0.0.1"
+#       terminated-pod-gc-threshold: "1000"
+#       feature-gates: "RotateKubeletServerCertificate=true"
+#   scheduler:
+#     extra_args:
+#       profiling: "false"
+#       address: "127.0.0.1"
 ssh_agent_auth: {{ rke_ssh_agent_auth }}

@@ -6,7 +6,8 @@ docker_required_packages:
   - device-mapper-persistent-data
   - lvm2
   - pygpgme
+  - iptables
 
 docker_pkg_repo: "https://download.docker.com/linux/centos/docker-ce.repo"
 
-docker_package: docker-ce
+docker_package: docker-ce-19.03.14-3.el7
